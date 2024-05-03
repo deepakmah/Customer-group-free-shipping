@@ -1,0 +1,63 @@
+<?php
+namespace Allfasteners\ShippingPlugin\Plugin;
+
+
+class ShippingPlugin
+{
+    /**
+     * @var \Magento\Checkout\Model\Session
+     */
+    protected $checkoutSession;
+
+    /**
+     * @param \Magento\Checkout\Model\Session $checkoutSession
+     */   
+    public function __construct(
+        \Magento\Checkout\Model\Session $checkoutSession
+    ) {
+        $this->checkoutSession = $checkoutSession;
+    }
+
+    /**
+     * Hide FlatRate shipping method
+     *
+     * @param \Magento\Quote\Api\ShipmentEstimationInterface $subject
+     * @param \Magento\Quote\Api\Data\ShippingMethodInterface[] $methods
+     * @return \Magento\Quote\Api\Data\ShippingMethodInterface[] $methods
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    public function afterEstimateByExtendedAddress(\Magento\Quote\Api\ShipmentEstimationInterface $subject, $methods) 
+    {
+        foreach($methods as $key => &$method) {
+            if($method->getMethodCode() == 'GND') {
+                if($this->checkTableRateShipping()) {
+                   //unset($methods[$key]);
+                   //break;
+                }
+            } else {
+				if($this->checkTableRateShipping()) {
+                   unset($methods[$key]);
+                   //break;
+                }
+			}
+        }
+        return $methods;
+    }
+
+    private function checkTableRateShipping()
+    {
+        $items = $this->checkoutSession->getQuote()->getAllVisibleItems();
+        $showTableRate = true;
+        foreach($items as $item)
+        {
+          if($item->getSku() == "12AF1000-1Q" || $item->getSku() == "12AF1000-1G") {
+             $showTableRate = false;
+             break;
+          }
+        }
+        return ($showTableRate) ? false : true; 
+
+    }
+
+
+}
